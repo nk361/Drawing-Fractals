@@ -1,10 +1,17 @@
-let c = document.getElementById("canvas_1");
+let c = document.getElementById("canvas1");
 let ctx = c.getContext("2d");
 
-let start_x = c.width / 10;
-let start_y = c.height - c.height / 10;
+ctx.canvas.width = window.innerWidth - 15;
+ctx.canvas.height = window.innerHeight - 50;
 
-let start_base_length = c.width - (c.width / 10 * 2);
+let startX = c.width / 2 - c.height / 2;
+let startY = c.height - c.height / 10;
+
+let startBaseLength = c.height;
+
+//new start here
+let numIterations = 10;
+ctx.translate(startX, startY);
 
 //to get the point when given start point, distance, and angle
 //x2 = x1 + distance * cos(angle)
@@ -20,105 +27,73 @@ class pointAndAngle
     }
 }
 
-let pointsAndAngles = [];
-let flipped = false;
+function clearBackground()
+{
+    ctx.clearRect(0 - startX, 0 - startY, c.width, c.height);
+}
 
-function makeUsableAngle(angle) {
+let pointsAndAngles = [];
+let highsAndLows;
+
+function findHighsAndLows()//returns highest y (which will be the lowest negative), lowest y (which will be the highest positive), leftmost x, rightmost x and it is more efficient to do all four in one pass
+{
+    let currentHighest = pointsAndAngles[0][0].y, currentLowest = pointsAndAngles[0][0].y, currentLeftmost = pointsAndAngles[0][0].x, currentRightmost = pointsAndAngles[0][0].x;
+    for(let i = 0; i < pointsAndAngles.length; i++)
+        for(let j = 0; j < pointsAndAngles[i].length; j++)
+        {
+            if(pointsAndAngles[i][j].y < currentHighest)
+                currentHighest = pointsAndAngles[i][j].y;
+            else if(pointsAndAngles[i][j].y > currentLowest)
+                currentLowest = pointsAndAngles[i][j].y;
+            if(pointsAndAngles[i][j].x < currentLeftmost)
+                currentLeftmost = pointsAndAngles[i][j].x;
+            else if(pointsAndAngles[i][j].x > currentRightmost)
+                currentRightmost = pointsAndAngles[i][j].x;
+        }
+    return [currentHighest, currentLowest, currentLeftmost, currentRightmost];
+}
+
+function degreesToRadians(angle)
+{
     return angle * Math.PI / 180;
 }
+
+let currentBaseLength = startBaseLength;
+let flipped = false;
 
 //generate a shape that starts at x, y and is at the angle given
 function returnShapePoints(x, y, angle)
 {
     //calculate first endpoint
-    let endpoint_x1 = x + (current_base_length / 2) * Math.cos(makeUsableAngle(angle) + makeUsableAngle(-60 * (flipped ? -1 : 1)));
-    let endpoint_y1 = y + (current_base_length / 2) * Math.sin(makeUsableAngle(angle) + makeUsableAngle(-60 * (flipped ? -1 : 1)));
+    let endpointX1 = x + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle) + degreesToRadians(-60 * (flipped ? -1 : 1)));
+    let endpointY1 = y + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle) + degreesToRadians(-60 * (flipped ? -1 : 1)));
 
     //calculate second endpoint
-    let endpoint_x2 = endpoint_x1 + (current_base_length / 2) * Math.cos(makeUsableAngle(angle) + makeUsableAngle(0));
-    let endpoint_y2 = endpoint_y1 + (current_base_length / 2) * Math.sin(makeUsableAngle(angle) + makeUsableAngle(0));
+    let endpointX2 = endpointX1 + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle) + degreesToRadians(0));
+    let endpointY2 = endpointY1 + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle) + degreesToRadians(0));
 
     //calculate third endpoint
-    let endpoint_x3 = endpoint_x2 + (current_base_length / 2) * Math.cos(makeUsableAngle(angle) + makeUsableAngle(60 * (flipped ? -1 : 1)));
-    let endpoint_y3 = endpoint_y2 + (current_base_length / 2) * Math.sin(makeUsableAngle(angle) + makeUsableAngle(60 * (flipped ? -1 : 1)));
+    let endpointX3 = endpointX2 + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle) + degreesToRadians(60 * (flipped ? -1 : 1)));
+    let endpointY3 = endpointY2 + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle) + degreesToRadians(60 * (flipped ? -1 : 1)));
 
     //return the four points for the current shape
-    return [new pointAndAngle(x, y, angle + -60 * (flipped ? -1 : 1)), new pointAndAngle(endpoint_x1, endpoint_y1, angle + 0), new pointAndAngle(endpoint_x2, endpoint_y2, angle + 60 * (flipped ? -1 : 1)), new pointAndAngle(endpoint_x3, endpoint_y3, 0)];
+    return [new pointAndAngle(x, y, angle + -60 * (flipped ? -1 : 1)), new pointAndAngle(endpointX1, endpointY1, angle + 0), new pointAndAngle(endpointX2, endpointY2, angle + 60 * (flipped ? -1 : 1)), new pointAndAngle(endpointX3, endpointY3, 0)];
 }
 
-//new start here
-let current_base_length = start_base_length;
-let num_iterations = 1;
-ctx.translate(start_x, start_y);
-
-function clearBackground()
+function generatePoints()
 {
-    ctx.clearRect(0 - start_x, 0 - start_y, c.width, c.height);
-}
-
-function increment()
-{
-    clearBackground();
-    if(num_iterations === 10)//anything more than 10 and it doesn't appear much different
-        num_iterations = 0;
-    num_iterations++;
-    generateFractal();
-}
-
-function findHighestY()//returns the highest y value on the canvas (which will be the lowest negative)
-{
-    let current_highest = pointsAndAngles[0][0].y;
-    for(let i = 0; i < pointsAndAngles.length; i++)
-        for(let j = 0; j < pointsAndAngles[i].length; j++)
-            if(pointsAndAngles[i][j].y < current_highest)
-                current_highest = pointsAndAngles[i][j].y;
-    return current_highest;
-}
-
-function findLowestY()//returns the lowest y value on the canvas (which will be the highest positive)
-{
-    let current_lowest = pointsAndAngles[0][0].y;
-    for(let i = 0; i < pointsAndAngles.length; i++)
-        for(let j = 0; j < pointsAndAngles[i].length; j++)
-            if(pointsAndAngles[i][j].y > current_lowest)
-                current_lowest = pointsAndAngles[i][j].y;
-    return current_lowest;
-}
-
-function findLeftmostX()//returns the leftmost x value on the canvas (lowest value)
-{
-    let current_leftmost = pointsAndAngles[0][0].x;
-    for(let i = 0; i < pointsAndAngles.length; i++)
-        for(let j = 0; j < pointsAndAngles[i].length; j++)
-            if(pointsAndAngles[i][j].x < current_leftmost)
-                current_leftmost = pointsAndAngles[i][j].x;
-    return current_leftmost;
-}
-
-function findRightmostX()//returns the rightmost x value on the canvas (highest value)
-{
-    let current_rightmost = pointsAndAngles[0][0].x;
-    for(let i = 0; i < pointsAndAngles.length; i++)
-        for(let j = 0; j < pointsAndAngles[i].length; j++)
-            if(pointsAndAngles[i][j].x > current_rightmost)
-                current_rightmost = pointsAndAngles[i][j].x;
-    return current_rightmost;
-}
-
-function generateFractal()
-{
-    ctx.moveTo(0, 0);
+    pointsAndAngles = [];//clears already used points
 
     flipped = false;
 
-    current_base_length = start_base_length;
+    currentBaseLength = startBaseLength;
 
     pointsAndAngles.push([new pointAndAngle(0, 0, 0)]);//start with the first point to generate the first shape
 
-    for(let i = 0; i < num_iterations; i++)
+    for(let i = 0; i < numIterations; i++)
     {
-        let current_shapes = pointsAndAngles.length;
-        for(let j = 0; j < current_shapes; j++)
+        let currentShapes = pointsAndAngles.length;
+        for(let j = 0; j < currentShapes; j++)
             for(let k = 0; k < pointsAndAngles[j].length; k++)
                 if((k  + 1) % 4 !== 0)//skip every fourth point, I use them to draw to but not to generate a shape
                 {
@@ -127,18 +102,46 @@ function generateFractal()
                 }
 
         //do after each layer
-        for(let j = 0; j < current_shapes; j++)//remove the last iteration's shapes
+        for(let j = 0; j < currentShapes; j++)//remove the last iteration's shapes
             pointsAndAngles.shift();
-        current_base_length /= 2;
+        currentBaseLength /= 2;
     }
 
+    //get them with one pass and save them for reuse every time new points have been generated
+    highsAndLows = findHighsAndLows();
+}
+
+function addWaterMark(highsAndLows)
+{
+    ctx.globalAlpha = 0.5;
+    ctx.font = "25px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "white";
+    ctx.fillText("@lolnk361", (highsAndLows[2] + highsAndLows[3]) / 2, -((highsAndLows[2] + highsAndLows[3]) / 2) + 80, 120);
+    ctx.globalAlpha = 1;
+}
+
+let gradientAngle = 0;
+
+function generateGradient(highsAndLows)
+{
+    //calculate gradient rotation points
+    let gradientX1 = ((highsAndLows[2] + highsAndLows[3]) / 2) + (highsAndLows[3] - ((highsAndLows[2] + highsAndLows[3]) / 2)) * Math.cos(degreesToRadians(-90 + gradientAngle));
+    let gradientY1 = ((highsAndLows[0] + highsAndLows[1]) / 2) + (highsAndLows[1] - ((highsAndLows[0] + highsAndLows[1]) / 2)) * Math.sin(degreesToRadians(-90 + gradientAngle));
+    let gradientX2 = ((highsAndLows[2] + highsAndLows[3]) / 2) + (highsAndLows[3] - ((highsAndLows[2] + highsAndLows[3]) / 2)) * Math.cos(degreesToRadians(90 + gradientAngle));
+    let gradientY2 = ((highsAndLows[0] + highsAndLows[1]) / 2) + (highsAndLows[1] - ((highsAndLows[0] + highsAndLows[1]) / 2)) * Math.sin(degreesToRadians(90 + gradientAngle));
+
     //generate gradient of equal proportions from top center to bottom center
-    let gradient = ctx.createLinearGradient((findLeftmostX() + findRightmostX()) / 2, findHighestY(), (findLeftmostX() + findRightmostX()) / 2, findLowestY());
+    let gradient = ctx.createLinearGradient(gradientX1, gradientY1, gradientX2, gradientY2);
+
     let colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
     for(let i = 0; i < colors.length; i++)
-        gradient.addColorStop(1 / colors.length * i, colors[i]);
+        gradient.addColorStop(1 / colors.length * i, colors[i]);//the first parameter is where the color will start in the gradient
     ctx.strokeStyle = gradient;
+}
 
+function drawFractal()
+{
     //connect the dots (points)
     ctx.beginPath();//this is needed to remove the line
     ctx.lineWidth = 1;
@@ -146,8 +149,58 @@ function generateFractal()
         for(let j = 0; j < pointsAndAngles[i].length; j++)
             ctx.lineTo(pointsAndAngles[i][j].x, pointsAndAngles[i][j].y);
     ctx.stroke();
-
-    pointsAndAngles = [];
 }
 
-generateFractal();
+function increment()
+{
+    if(numIterations === 10)//anything more than 10 and it doesn't appear much different
+        numIterations = 0;
+    numIterations++;
+    clearBackground();
+    generatePoints();
+    ctx.fillStyle = "black";
+    ctx.fillRect(0 - startX, 0 - startY, c.width, c.height);
+    addWaterMark(highsAndLows);
+    generateGradient(highsAndLows);
+    drawFractal();
+}
+
+let gradientOn = false;
+
+function toggleGradientMovement()
+{
+    gradientOn = !gradientOn;
+}
+
+//Initial generation and drawing
+generatePoints();
+ctx.fillStyle = "black";
+ctx.fillRect(0 - startX, 0 - startY, c.width, c.height);
+addWaterMark(highsAndLows);
+generateGradient(highsAndLows);
+drawFractal();
+
+function generateFractal()
+{
+    //redraw with new gradient, using old points
+    if(gradientOn)
+    {
+        gradientAngle++;
+
+        if(gradientAngle === 359)
+            gradientAngle = 0;
+
+        //Only need to redraw while the gradient is changing
+        ctx.moveTo(0, 0);
+        clearBackground();
+        ctx.fillStyle = "black";
+        ctx.fillRect(0 - startX, 0 - startY, c.width, c.height);
+        addWaterMark(highsAndLows);
+        generateGradient(highsAndLows);
+        drawFractal();
+    }
+
+    window.requestAnimationFrame(generateFractal);
+}
+
+window.requestAnimationFrame(generateFractal);
