@@ -65,16 +65,16 @@ let flipped = false;
 function returnShapePoints(x, y, angle)
 {
     //calculate first endpoint
-    let endpointX1 = x + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle) + degreesToRadians(-60 * (flipped ? -1 : 1)));
-    let endpointY1 = y + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle) + degreesToRadians(-60 * (flipped ? -1 : 1)));
+    let endpointX1 = x + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle + -60 * (flipped ? -1 : 1)));
+    let endpointY1 = y + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle + -60 * (flipped ? -1 : 1)));
 
     //calculate second endpoint
-    let endpointX2 = endpointX1 + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle) + degreesToRadians(0));
-    let endpointY2 = endpointY1 + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle) + degreesToRadians(0));
+    let endpointX2 = endpointX1 + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle + 0));
+    let endpointY2 = endpointY1 + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle + 0));
 
     //calculate third endpoint
-    let endpointX3 = endpointX2 + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle) + degreesToRadians(60 * (flipped ? -1 : 1)));
-    let endpointY3 = endpointY2 + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle) + degreesToRadians(60 * (flipped ? -1 : 1)));
+    let endpointX3 = endpointX2 + (currentBaseLength / 2) * Math.cos(degreesToRadians(angle + 60 * (flipped ? -1 : 1)));
+    let endpointY3 = endpointY2 + (currentBaseLength / 2) * Math.sin(degreesToRadians(angle + 60 * (flipped ? -1 : 1)));
 
     //return the four points for the current shape
     return [new pointAndAngle(x, y, angle + -60 * (flipped ? -1 : 1)), new pointAndAngle(endpointX1, endpointY1, angle + 0), new pointAndAngle(endpointX2, endpointY2, angle + 60 * (flipped ? -1 : 1)), new pointAndAngle(endpointX3, endpointY3, 0)];
